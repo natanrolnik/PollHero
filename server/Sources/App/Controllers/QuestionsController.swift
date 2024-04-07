@@ -75,6 +75,9 @@ final class VotesController: RouteCollection {
     private func moveToNext(_ req: Request) async throws -> QuestionUpdate {
         if let current = currentQuestionId, current == Question.all.last?.id {
             currentQuestionId = nil
+            try questionsSockets.forEach { ws in
+                try ws.send(QuestionUpdate.finished.jsonString(using: jsonEncoder))
+            }
             return .finished
         }
 
