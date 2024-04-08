@@ -1,17 +1,28 @@
 import Foundation
 
-struct Question: Codable {
-    let id: Int
-    let text: String
-    let answers: [String]
+public struct Question: Codable {
+    public let id: Int
+    public let text: String
+    public let answers: [String]
+
+    public init(id: Int, text: String, answers: [String]) {
+        self.id = id
+        self.text = text
+        self.answers = answers
+    }
 }
 
-struct QuestionVotes: Codable {
-    let id: Int
-    let votes: [String: Int]
+public struct QuestionVotes: Codable {
+    public let id: Int
+    public let votes: [String: Int]
+
+    public init(id: Int, votes: [String : Int]) {
+        self.id = id
+        self.votes = votes
+    }
 }
 
-enum QuestionUpdate: Codable {
+public enum QuestionUpdate: Codable {
     enum Error: Swift.Error {
         case invalidEnum
     }
@@ -24,7 +35,7 @@ enum QuestionUpdate: Codable {
         case finished
     }
 
-    init(from decoder: any Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         if let question = try container.decodeIfPresent(Question.self, forKey: .question) {
@@ -36,7 +47,7 @@ enum QuestionUpdate: Codable {
         }
     }
 
-    func encode(to encoder: any Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
         case let .question(question):

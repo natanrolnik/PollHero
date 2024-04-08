@@ -1,3 +1,4 @@
+import Shared
 import Vapor
 
 final class VotesController: RouteCollection {
@@ -115,3 +116,6 @@ private extension Encodable {
         try String(data: encoder.encode(self), encoding: .utf8) ?? ""
     }
 }
+
+extension Question: Content {}
+extension QuestionUpdate: Content {}

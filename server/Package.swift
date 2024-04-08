@@ -1,20 +1,22 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 import PackageDescription
 
 let package = Package(
     name: "server",
     platforms: [
-       .macOS(.v13)
+       .macOS(.v12)
     ],
     dependencies: [
         // 💧 A server-side Swift web framework.
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
+        .package(path: "../shared")
     ],
     targets: [
         .executableTarget(
             name: "App",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
+                .product(name: "Shared", package: "Shared")
             ]
         ),
         .testTarget(name: "AppTests", dependencies: [

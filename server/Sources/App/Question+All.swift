@@ -1,44 +1,18 @@
-import Vapor
-
-struct Question: Content {
-    let id: Int
-    let text: String
-    let answers: [String]
-}
-
-struct QuestionVotes: Codable {
-    let id: Int
-    let votes: [String: Int]
-}
-
-enum QuestionUpdate: Content {
-    case question(Question)
-    case finished
-
-    func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        switch self {
-        case let .question(question):
-            try container.encode(question, forKey: .question)
-        case .finished:
-            try container.encode(true, forKey: .finished)
-        }
-    }
-}
+import Shared
 
 extension Question {
     static let all: [Question] = [
-        .init(
+        Question(
             id: 1,
             text: "Have you done programming work related to the app, but not the app itself? Backend doesn't count",
             answers: ["No", "Yes"]
         ),
-        .init(
+        Question(
             id: 2,
             text: "Have you ever dealt with Continuous Integration?",
             answers: ["No", "Yes"]
         ),
-        .init(
+        Question(
             id: 3,
             text: "Have you felt the need to automate tasks you or your team were doing repeatedly?",
             answers: [
@@ -47,7 +21,7 @@ extension Question {
                 "Yes, and automated it"
             ]
         ),
-        .init(
+        Question(
             id: 4,
             text: "Have you played with Swift on the Server?",
             answers: [
@@ -58,7 +32,7 @@ extension Question {
                 "Yes, more than one of the options"
             ]
         ),
-        .init(
+        Question(
             id: 5,
             text: "Have you ever edited a Package.swift file?",
             answers: [
