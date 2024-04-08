@@ -1,5 +1,5 @@
 import Vapor
 
 func routes(_ app: Application) throws {
-    try app.register(collection: VotesController())
+    try app.register(collection: VotesController(redis: app.redis))
 }

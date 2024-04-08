@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Question: Codable {
+public struct Question: Codable, Identifiable {
     public let id: Int
     public let text: String
     public let answers: [String]
@@ -12,13 +12,15 @@ public struct Question: Codable {
     }
 }
 
-public struct QuestionVotes: Codable {
-    public let id: Int
-    public let votes: [String: Int]
+public struct Vote: Codable {
+    public let questionId: Question.ID
+    public let answerIndex: Int
+    public let count: Int
 
-    public init(id: Int, votes: [String : Int]) {
-        self.id = id
-        self.votes = votes
+    public init(questionId: Question.ID, answerIndex: Int, count: Int) {
+        self.questionId = questionId
+        self.answerIndex = answerIndex
+        self.count = count
     }
 }
 

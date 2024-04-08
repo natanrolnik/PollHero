@@ -46,7 +46,10 @@ class ContentView: View {
     }
 
     var votesView: some View {
-        let sortedVotes = votes.sorted(by: { $0.value > $1.value })
+        let sortedVotes = votes
+            .sorted(by: { $0.value > $1.value })
+            .filter { $0.value > 0 }
+
         let totalVotes = votes.reduce(0) { $0 + $1.value }
         return ForEach(sortedVotes, id: \.key) { answer, count in
             let percent = Int((Float(count) / Float(totalVotes)) * 100)
@@ -113,7 +116,9 @@ private extension ContentView {
             switch update {
             case let .question(question):
                 self.question = question
-                self.votes.removeAll()
+                self.votes = question.answers.reduce(into: [:]) {
+                    $0[$1] = 0
+                }
                 self.scheduleNext(delay: 10)
             case .finished:
                 exit(0)
@@ -123,16 +128,22 @@ private extension ContentView {
     }
 
     func processVoteMessage(_ message: URLSessionWebSocketTask.Message) {
-        guard let votes = try? message.decodeString(as: QuestionVotes.self, using: jsonDecoder) else {
+        guard let vote = try? message.decodeString(as: Vote.self, using: jsonDecoder) else {
             return
         }
 
-        guard question?.id == votes.id else {
+        guard let question,
+              question.id == vote.questionId,
+              question.answers.indices.contains(vote.answerIndex) else {
             return
         }
+
+        let answer = question.answers[vote.answerIndex]
 
         DispatchQueue.main.async {
-            self.votes = votes.votes
+            var votes = self.votes
+            votes[answer] = vote.count
+            self.votes = votes
         }
     }
 

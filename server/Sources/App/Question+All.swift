@@ -41,4 +41,8 @@ extension Question {
             ]
         ),
     ]
+
+    static func withId(_ id: Question.ID) -> Self? {
+        Self.all.first { $0.id == id }
+    }
 }

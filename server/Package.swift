@@ -9,6 +9,7 @@ let package = Package(
     dependencies: [
         // 💧 A server-side Swift web framework.
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
+        .package(url: "https://github.com/vapor/redis.git", from: "4.0.0"),
         .package(path: "../shared")
     ],
     targets: [
@@ -16,6 +17,7 @@ let package = Package(
             name: "App",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
+                .product(name: "Redis", package: "redis"),
                 .product(name: "Shared", package: "Shared")
             ]
         ),

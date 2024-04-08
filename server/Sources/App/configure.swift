@@ -1,3 +1,4 @@
+import Redis
 import Vapor
 
 // configures your application
@@ -10,6 +11,8 @@ public func configure(_ app: Application) async throws {
     let cors = CORSMiddleware(configuration: corsConfiguration)
     // cors middleware should come before default error middleware using `at: .beginning`
     app.middleware.use(cors, at: .beginning)
+
+    app.redis.configuration = try RedisConfiguration(hostname: "localhost")
 
     // register routes
     try routes(app)
