@@ -1,9 +1,8 @@
 <script>
   import Question from './lib/Question.svelte';
-  
-  const socket = new WebSocket('ws://127.0.0.1:8080/questions');
-  
-  console.log("Should open socket")
+
+  const socket = new WebSocket('wss://poll-hero-1b16db57f7aa.herokuapp.com/questions');
+
   let question;
   let finished = false
 
@@ -11,7 +10,7 @@
   socket.addEventListener('open', function (event) {
       console.log("Socket is open");
   });
-  
+
   // Listen for messages
   socket.addEventListener('message', function (event) {
       const json = JSON.parse(event.data);

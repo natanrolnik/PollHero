@@ -12,7 +12,18 @@ public func configure(_ app: Application) async throws {
     // cors middleware should come before default error middleware using `at: .beginning`
     app.middleware.use(cors, at: .beginning)
 
-    app.redis.configuration = try RedisConfiguration(hostname: "localhost")
+    if let redisURL = Environment.get("REDIS_URL") {
+        app.redis.configuration = try RedisConfiguration(
+            url: redisURL,
+            pool: .init(connectionRetryTimeout: .seconds(5))
+        )
+    } else {
+        app.redis.configuration = try RedisConfiguration(hostname: "localhost")
+    }
+
+    if let port = Environment.get("PORT").flatMap(Int.init(_:)) {
+        app.http.server.configuration.port = port
+    }
 
     // register routes
     try routes(app)

@@ -2,6 +2,12 @@ import Foundation
 import Shared
 import SwiftTUI
 
+private let serverHost = "poll-hero-1b16db57f7aa.herokuapp.com"
+private let socketScheme = "wss"
+
+// private let serverHost = "localhost:8080"
+// private let socketScheme = "ws"
+
 class ContentView: View {
     private let jsonDecoder = JSONDecoder()
 
@@ -12,7 +18,7 @@ class ContentView: View {
         sendPost("reset")
         registerWebSockets()
 
-        scheduleNext(delay: 3)
+        scheduleNext(delay: 7)
     }
 
     var body: some View {
@@ -36,7 +42,7 @@ class ContentView: View {
                 }
                 .padding()
                 .border()
-                .background(.white)
+                .background(.red)
 
                 Spacer()
             }
@@ -66,7 +72,7 @@ class ContentView: View {
 
 private extension ContentView {
     func registerWebSockets() {
-        let votesURL = URL(string: "ws://localhost:8080/votes")!
+        let votesURL = URL(string: "\(socketScheme)://\(serverHost)/votes")!
         let votesSocket = URLSession.shared.webSocketTask(with: votesURL)
 
         func votesSocketReceive() {
@@ -83,7 +89,7 @@ private extension ContentView {
 
         votesSocket.resume()
 
-        let questionsURL = URL(string: "ws://localhost:8080/questions")!
+        let questionsURL = URL(string: "\(socketScheme)://\(serverHost)/questions")!
         let questionsSocket = URLSession.shared.webSocketTask(with: questionsURL)
 
         func questionsSocketReceive() {
@@ -102,7 +108,7 @@ private extension ContentView {
     }
 
     func sendPost(_ path: String) {
-        var request = URLRequest(url: URL(string: "http://localhost:8080/\(path)")!)
+        var request = URLRequest(url: URL(string: "https://\(serverHost)/\(path)")!)
         request.httpMethod = "POST"
         URLSession.shared.dataTask(with: request).resume()
     }
@@ -119,7 +125,7 @@ private extension ContentView {
                 self.votes = question.answers.reduce(into: [:]) {
                     $0[$1] = 0
                 }
-                self.scheduleNext(delay: 10)
+                self.scheduleNext(delay: 12)
             case .finished:
                 exit(0)
                 break

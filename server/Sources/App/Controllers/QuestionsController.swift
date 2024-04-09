@@ -49,12 +49,15 @@ final class VotesController: RouteCollection {
         }
 
         routes.webSocket("votes") { [weak self] req, ws in
-            do {
-                try await self?.votesCountSocket?.close()
-            } catch {}
+            if let existing = self?.votesCountSocket {
+                do {
+                    try await existing.close()
+                } catch {}
+            }
 
             self?.votesCountSocket = ws
             ws.onClose.whenComplete { _ in
+                req.logger.debug("Votes socket closed")
                 self?.votesCountSocket = nil
             }
         }
@@ -72,6 +75,7 @@ final class VotesController: RouteCollection {
         ws.onClose.whenComplete { [weak self] _ in
             if let index = self?.questionsSockets.firstIndex(where: { $0 === ws }) {
                 self?.questionsSockets.remove(at: index)
+                req.logger.debug("Question socket closed and removed")
             }
         }
     }
@@ -133,11 +137,7 @@ final class VotesController: RouteCollection {
 
         try await redis.psubscribe(
             to: "votes:\(newQuestionId):*",
-            messageReceiver: {
-                [weak votesCountSocket] publisher,
-                message in
-                print("*|*", publisher.rawValue, message.string ?? "")
-                
+            messageReceiver: { [weak votesCountSocket] publisher, message in
                 let components = publisher.rawValue.split(separator: ":")
                 guard components.count == 3,
                       let questionId = Int(components[1]),
@@ -145,7 +145,7 @@ final class VotesController: RouteCollection {
                       let count = message.int else {
                     return
                 }
-                
+
                 let vote = Vote(
                     questionId: questionId,
                     answerIndex: answerIndex,
