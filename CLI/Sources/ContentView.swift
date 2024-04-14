@@ -17,8 +17,6 @@ class ContentView: View {
     init() {
         sendPost("reset")
         registerWebSockets()
-
-        scheduleNext(delay: 7)
     }
 
     var body: some View {
@@ -125,7 +123,6 @@ private extension ContentView {
                 self.votes = question.answers.reduce(into: [:]) {
                     $0[$1] = 0
                 }
-                self.scheduleNext(delay: 12)
             case .finished:
                 exit(0)
                 break
