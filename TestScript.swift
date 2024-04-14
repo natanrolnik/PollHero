@@ -1,15 +1,15 @@
 import Foundation
 
-let questionsURL = URL(string: "wss://poll-hero-1b16db57f7aa.herokuapp.com/questions")!
+let questionsURL = URL(string: "wss://poll-hero-server.natanrolnik.me/questions")!
 
 var allSockets: [URLSessionWebSocketTask] = []
 
-for index in 0..<300 {
+for index in 1...200 {
     let questionsSocket = URLSession.shared.webSocketTask(with: questionsURL)
     
     func questionsSocketReceive() {
         questionsSocket.receive { result in
-            if case let .success(message) = result, (index + 1) % 50 == 0 {
+            if case let .success(message) = result, index % 50 == 0 {
                 if case .string = message {
                     print("Got \(index) at \(Date())")
                 }
