@@ -31,7 +31,9 @@
     {#if finished}
       Thanks for participating! Back to the talk.
     {:else}
+    <h2>
       Questions will begin shortly.
+    </h2>
     {/if}
   {/if}
   
