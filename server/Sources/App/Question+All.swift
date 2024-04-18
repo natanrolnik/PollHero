@@ -4,7 +4,7 @@ extension Question {
     static let all: [Question] = [
         Question(
             id: 1,
-            text: "Have you done programming work related to the app, but not the app itself? Backend doesn't count",
+            text: "Have you done programming work related to the app, but not the app itself?",
             answers: ["No", "Yes"]
         ),
         Question(
