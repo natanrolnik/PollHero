@@ -27,12 +27,12 @@ final class VotesController: RouteCollection {
 
     let redis: Application.Redis
 
-    init(redis: Application.Redis) {
+    init(logger: Logger, redis: Application.Redis) {
         self.redis = redis
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             Task {
-                try await self.subscribeToQuestionUpdates()
+                try await self.subscribeToQuestionUpdates(logger: logger)
             }
         }
     }
@@ -82,7 +82,7 @@ final class VotesController: RouteCollection {
 
     private var currentQuestionIdSubscription: Question.ID?
 
-    private func subscribeToQuestionUpdates() async throws {
+    private func subscribeToQuestionUpdates(logger: Logger) async throws {
         try await redis.subscribe(
             to: "currentQuestion",
             messageReceiver: { [weak self] publisher, message in
@@ -106,7 +106,8 @@ final class VotesController: RouteCollection {
                 Task {
                     try await self.subscribeToVotingUpdates(
                         oldQuestionId: self.currentQuestionIdSubscription,
-                        newQuestionId: newQuestionId
+                        newQuestionId: newQuestionId,
+                        logger: logger
                     )
                 }
             },
@@ -117,7 +118,8 @@ final class VotesController: RouteCollection {
 
     private func subscribeToVotingUpdates(
         oldQuestionId: Question.ID?,
-        newQuestionId: Question.ID?
+        newQuestionId: Question.ID?,
+        logger: Logger
     ) async throws {
         defer {
             currentQuestionIdSubscription = newQuestionId
@@ -135,6 +137,7 @@ final class VotesController: RouteCollection {
             return
         }
 
+        logger.debug("Subscribing to votes:\(newQuestionId):*")
         try await redis.psubscribe(
             to: "votes:\(newQuestionId):*",
             messageReceiver: { [weak votesCountSocket] publisher, message in
@@ -146,6 +149,7 @@ final class VotesController: RouteCollection {
                     return
                 }
 
+                logger.debug("Sending vote.jsonString()")
                 let vote = Vote(
                     questionId: questionId,
                     answerIndex: answerIndex,
@@ -171,8 +175,10 @@ final class VotesController: RouteCollection {
         }
 
         let key = "votes:\(questionId):\(vote.index)"
+        req.logger.debug("Will increment for \(key)")
         let votesCount = try await redis.increment(.init(stringLiteral: key)).get()
         _ = try await redis.publish(votesCount, to: .init(key)).get()
+        req.logger.debug("Will publish \(votesCount) for \(key)")
 
         return Response(status: .ok)
     }
