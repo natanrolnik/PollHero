@@ -12,7 +12,7 @@ public func configure(_ app: Application) async throws {
     // cors middleware should come before default error middleware using `at: .beginning`
     app.middleware.use(cors, at: .beginning)
 
-    if let redisURL = Environment.get("REDIS_URL") {
+    if let redisURL = Environment.get("REDIS_URL") ?? Environment.get("STACKHERO_REDIS_URL_TLS") {
         app.redis.configuration = try RedisConfiguration(
             url: redisURL,
             pool: .init(connectionRetryTimeout: .seconds(5))
