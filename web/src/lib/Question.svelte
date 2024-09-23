@@ -10,7 +10,7 @@
       if (lastVoteId === id) { return };
 
       lastVoteId = id;
-      const res = await fetch('https://poll-hero-1b16db57f7aa.herokuapp.com/vote', {
+      const res = await fetch('https://poll-hero-server.natanrolnik.me/vote', {
         method: 'POST',
         body: JSON.stringify({questionId: id, index: index}),
         headers: { 'Content-Type': 'application/json' }
