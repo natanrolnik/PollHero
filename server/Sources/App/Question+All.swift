@@ -4,7 +4,7 @@ extension Question {
     static let all: [Question] = [
         Question(
             id: 1,
-            text: "Have you done programming work related to the app, but not the app itself?",
+            text: "Have you done programming work related to an iOS app, but not the app itself?",
             answers: ["No", "Yes"]
         ),
         Question(
@@ -37,7 +37,7 @@ extension Question {
             text: "Have you ever edited a Package.swift file?",
             answers: [
                 "No",
-                "For sure!"
+                "Of course!"
             ]
         ),
     ]

@@ -26,12 +26,15 @@ final class VotesController: RouteCollection {
     private let jsonEncoder = JSONEncoder()
 
     let redis: Application.Redis
+    private let enableSocket: Bool
 
-    init(logger: Logger, redis: Application.Redis) {
+    init(enableSocket: Bool, logger: Logger, redis: Application.Redis) {
         self.redis = redis
+        self.enableSocket = enableSocket
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        if enableSocket {
             Task {
+                try await Task.sleep(for: .seconds(3))
                 try await self.subscribeToQuestionUpdates(logger: logger)
             }
         }
@@ -41,26 +44,59 @@ final class VotesController: RouteCollection {
         routes.post("vote", use: vote)
         routes.post("next", use: moveToNext)
         routes.post("reset", use: reset)
+        routes.get("fallback", "votes", use: getVotesCount)
+        routes.get("fallback", "question", use: getCurrentQuestion)
 
-        routes.webSocket("questions") { [weak self] req, ws in
-            Task { [self] in
-                try await self?.registerQuestionsSocket(ws, req: req)
+        if enableSocket {
+            routes.webSocket("questions") { [weak self] req, ws in
+                Task { [self] in
+                    try await self?.registerQuestionsSocket(ws, req: req)
+                }
+            }
+
+            routes.webSocket("votes") { [weak self] req, ws in
+                if let existing = self?.votesCountSocket {
+                    do {
+                        try await existing.close()
+                    } catch {}
+                }
+
+                self?.votesCountSocket = ws
+                ws.onClose.whenComplete { _ in
+                    req.logger.debug("Votes socket closed")
+                    self?.votesCountSocket = nil
+                }
             }
         }
+    }
 
-        routes.webSocket("votes") { [weak self] req, ws in
-            if let existing = self?.votesCountSocket {
-                do {
-                    try await existing.close()
-                } catch {}
-            }
-
-            self?.votesCountSocket = ws
-            ws.onClose.whenComplete { _ in
-                req.logger.debug("Votes socket closed")
-                self?.votesCountSocket = nil
-            }
+    private func getCurrentQuestion(_ req: Request) async throws -> QuestionUpdate {
+        guard let questionId = try await currentQuestionId,
+              let question = Question.withId(questionId) else {
+            throw Abort(.internalServerError)
         }
+
+        return .question(question)
+    }
+
+    private func getVotesCount(_ req: Request) async throws -> Votes {
+        guard let questionId = try await currentQuestionId,
+              let question = Question.withId(questionId) else {
+            throw Abort(.internalServerError)
+        }
+
+        let voteKeys = (0..<question.answers.count).map { index in
+            let key: RedisKey = "votes:\(questionId):\(index)"
+            return (index, key)
+        }
+
+        var votes: [Int: Int] = [:]
+        for key in voteKeys {
+            let count = try await redis.get(key.1, as: Int.self).get() ?? 0
+            votes[key.0] = count
+        }
+
+        return Votes(questionId: questionId, votes)
     }
 
     private func registerQuestionsSocket(_ ws: WebSocket, req: Request) async throws {
@@ -178,7 +214,7 @@ final class VotesController: RouteCollection {
         req.logger.debug("Will increment for \(key)")
         let votesCount = try await redis.increment(.init(stringLiteral: key)).get()
         _ = try await redis.publish(votesCount, to: .init(key)).get()
-        req.logger.debug("Will publish \(votesCount) for \(key)")
+        req.logger.debug("Published \(votesCount) for \(key)")
 
         return Response(status: .ok)
     }
@@ -227,6 +263,7 @@ private struct EmptyResponse: Content {}
 
 extension Question: Content {}
 extension QuestionUpdate: Content {}
+extension Votes: Content {}
 
 private extension Question {
     var answerChannels: [RedisChannelName] {

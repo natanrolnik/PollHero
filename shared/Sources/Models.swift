@@ -12,6 +12,16 @@ public struct Question: Codable, Identifiable {
     }
 }
 
+public struct Votes: Codable {
+    public let questionId: Question.ID
+    public let votes: [Int: Int]
+
+    public init(questionId: Question.ID, _ votes: [Int : Int]) {
+        self.questionId = questionId
+        self.votes = votes
+    }
+}
+
 public struct Vote: Codable {
     public let questionId: Question.ID
     public let answerIndex: Int
@@ -56,6 +66,13 @@ public enum QuestionUpdate: Codable {
             try container.encode(question, forKey: .question)
         case .finished:
             try container.encode(true, forKey: .finished)
+        }
+    }
+
+    public var question: Question? {
+        switch self {
+        case let .question(question): question
+        case .finished: nil
         }
     }
 }
