@@ -71,8 +71,11 @@ final class VotesController: RouteCollection {
     }
 
     private func getCurrentQuestion(_ req: Request) async throws -> QuestionUpdate {
-        guard let questionId = try await currentQuestionId,
-              let question = Question.withId(questionId) else {
+        guard let questionId = try await currentQuestionId else {
+            return .idle
+        }
+
+        guard let question = Question.withId(questionId) else {
             throw Abort(.internalServerError)
         }
 

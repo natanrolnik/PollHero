@@ -39,10 +39,12 @@ public enum QuestionUpdate: Codable {
         case invalidEnum
     }
 
+    case idle
     case question(Question)
     case finished
 
     enum CodingKeys: CodingKey {
+        case idle
         case question
         case finished
     }
@@ -54,6 +56,8 @@ public enum QuestionUpdate: Codable {
             self = .question(question)
         } else if let finished = try? container.decodeIfPresent(Bool.self, forKey: .finished), finished {
             self = .finished
+        } else if let idle = try? container.decodeIfPresent(Bool.self, forKey: .idle), idle {
+            self = .idle
         } else {
             throw Error.invalidEnum
         }
@@ -66,13 +70,15 @@ public enum QuestionUpdate: Codable {
             try container.encode(question, forKey: .question)
         case .finished:
             try container.encode(true, forKey: .finished)
+        case .idle:
+            try container.encode(true, forKey: .idle)
         }
     }
 
     public var question: Question? {
         switch self {
         case let .question(question): question
-        case .finished: nil
+        case .finished, .idle: nil
         }
     }
 }
