@@ -75,6 +75,10 @@ final class VotesController: RouteCollection {
             return .idle
         }
 
+        if questionId == -1 {
+            return .finished
+        }
+
         guard let question = Question.withId(questionId) else {
             throw Abort(.internalServerError)
         }
