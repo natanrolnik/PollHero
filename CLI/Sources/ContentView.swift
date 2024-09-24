@@ -2,11 +2,13 @@ import Foundation
 import Shared
 import SwiftTUI
 
+private let serverScheme = "https"
 private let serverHost = "poll-hero-1b16db57f7aa.herokuapp.com"
 private let socketScheme = "wss"
 
-// private let serverHost = "localhost:8080"
-// private let socketScheme = "ws"
+//private let serverScheme = "http"
+//private let serverHost = "localhost:8080"
+//private let socketScheme = "ws"
 
 class ContentView: View {
     private let jsonDecoder = JSONDecoder()
@@ -16,7 +18,8 @@ class ContentView: View {
 
     init() {
         sendPost("reset")
-        registerWebSockets()
+//        registerWebSockets()
+        registerPolling()
     }
 
     var body: some View {
@@ -28,13 +31,16 @@ class ContentView: View {
                 VStack {
                     if let question {
                         Text(question.text)
+                            .foregroundColor(.white)
                         Spacer()
                             .frame(height: 2)
                         votesView
                     } else {
                         Text("Let's start with some warm up questions!")
+                            .foregroundColor(.white)
                             .bold()
                         Text("Right from the CLI!")
+                            .foregroundColor(.white)
                             .bold()
                     }
                 }
@@ -60,8 +66,10 @@ class ContentView: View {
             let squares = percent / 2
             VStack {
                 Text("\(percent)% (\(count)): \(answer)")
+                    .foregroundColor(.white)
                     .bold()
                 Text(String(repeatElement("▮", count: squares)))
+                    .foregroundColor(.white)
                 Spacer().frame(height: 1)
             }
         }
@@ -105,8 +113,64 @@ private extension ContentView {
         questionsSocket.resume()
     }
 
+    private func registerPolling() {
+        Task {
+            for await _ in delayedStream(delay: 0.5) {
+                Task {
+                    try await getQuestion()
+                }
+            }
+        }
+
+        Task {
+            for await _ in delayedStream(delay: 0.5) {
+                Task {
+                    try await getVotes()
+                }
+            }
+        }
+    }
+
+    private func getQuestion() async throws {
+        let pollingURL = URLRequest(url: URL(string: "\(serverScheme)://\(serverHost)/fallback/question")!)
+        let (data, response) = try await URLSession.shared.data(for: pollingURL)
+        let questionUpdate = try JSONDecoder().decode(QuestionUpdate.self, from: data)
+
+        if let question = questionUpdate.question,
+           self.question?.id != question.id {
+            await MainActor.run {
+                self.question = question
+            }
+        }
+    }
+
+    private func getVotes() async throws {
+        let pollingURL = URLRequest(url: URL(string: "\(serverScheme)://\(serverHost)/fallback/votes")!)
+        let (data, response) = try await URLSession.shared.data(for: pollingURL)
+
+        let votes = try JSONDecoder().decode(Votes.self, from: data)
+
+        guard let question,
+              question.id == votes.questionId else {
+            return
+        }
+
+        var votesAndAnswers = [String: Int]()
+        votes.votes.forEach { (answerIndex, voteCount) in
+            guard question.answers.indices.contains(answerIndex) else {
+                return
+            }
+            let answer = question.answers[answerIndex]
+            votesAndAnswers[answer] = voteCount
+        }
+
+        await MainActor.run {
+            self.votes = votesAndAnswers
+        }
+    }
+
     func sendPost(_ path: String) {
-        var request = URLRequest(url: URL(string: "https://\(serverHost)/\(path)")!)
+        var request = URLRequest(url: URL(string: "\(serverScheme)://\(serverHost)/\(path)")!)
         request.httpMethod = "POST"
         URLSession.shared.dataTask(with: request).resume()
     }
@@ -116,16 +180,21 @@ private extension ContentView {
             return
         }
 
-        DispatchQueue.main.async {
-            switch update {
-            case let .question(question):
-                self.question = question
-                self.votes = question.answers.reduce(into: [:]) {
-                    $0[$1] = 0
+        Task {
+            await MainActor.run {
+                switch update {
+                case let .question(question):
+                    self.question = question
+                    self.votes = question.answers.reduce(into: [:]) {
+                        $0[$1] = 0
+                    }
+                case .finished:
+                    exit(0)
+                    break
+                case .idle:
+                    self.question = nil
+                    self.votes = [:]
                 }
-            case .finished:
-                exit(0)
-                break
             }
         }
     }
@@ -143,16 +212,18 @@ private extension ContentView {
 
         let answer = question.answers[vote.answerIndex]
 
-        DispatchQueue.main.async {
-            var votes = self.votes
-            votes[answer] = vote.count
-            self.votes = votes
+        Task {
+            await MainActor.run {
+                var votes = self.votes
+                votes[answer] = vote.count
+                self.votes = votes
+            }
         }
     }
 
-    func scheduleNext(delay: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(delay)) {
-            self.sendPost("next")
-        }
-    }
+//    func scheduleNext(delay: Int) {
+//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(delay)) {
+//            self.sendPost("next")
+//        }
+//    }
 }

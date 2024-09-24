@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "PollHero",
-    platforms: [.macOS(.v12)],
+    platforms: [.macOS(.v13)],
     dependencies: [
         .package(url: "https://github.com/rensbreur/SwiftTUI", branch: "main"),
         .package(path: "../Shared")
