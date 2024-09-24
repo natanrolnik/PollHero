@@ -28,10 +28,12 @@
       console.error('Error fetching data:', error);
     }
   }
-  
+
   onMount(async () => {
-    await getQuestion()
-    setInterval(getQuestion, 1000);
+    if (!finished) {
+      await getQuestion()
+      setInterval(getQuestion, 1000);
+    }
   });
   
   
