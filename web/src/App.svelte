@@ -29,12 +29,12 @@
     }
   }
 
-  onMount(async () => {
-    if (!finished) {
-      await getQuestion()
-      setInterval(getQuestion, 1000);
-    }
-  });
+  // onMount(async () => {
+  //   if (!finished) {
+  //     await getQuestion()
+  //     setInterval(getQuestion, 1000);
+  //   }
+  // });
   
   
   // Connection opened
@@ -56,17 +56,17 @@
 </script>
 
 <!-- <main> -->
-  {#if question != null}
-    <Question id={ question.id } text={ question.text } answers={ question.answers } />
-  {:else}
-    {#if finished}
-      Thanks for participating! Back to the talk.
-    {:else}
+  <!--{#if question != null}
+  //   <Question id={ question.id } text={ question.text } answers={ question.answers } />
+  // {:else}
+  //   {#if finished}
+  //     Thanks for participating! Back to the talk.
+  //   {:else}-->
     <h2>
-      Questions will begin shortly.
+      😅 Talk is over 😅
     </h2>
-    {/if}
-  {/if}
+    <!-- {/if}
+  {/if} -->
   
 <!-- </main> -->
 
